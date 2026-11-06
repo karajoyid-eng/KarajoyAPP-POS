@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Karajoy POS</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Kaushan+Script&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#f5c021;--gold2:#ffd84a;--gold-d:#c9971a;--line:#8a6a1c;--bg:#070707;--panel:#0f0f0f;--card:#141414;--txt:#fff;--muted:#a9a9a9;--red:#b3120f;--green:#2fd35a}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif;-webkit-tap-highlight-color:transparent}
+body{min-height:100vh;color:var(--txt);display:flex;align-items:center;justify-content:center;padding:20px;position:relative;overflow:hidden}
+/* HD Japanese night alley background (SVG, scalable) */
+.bg{position:fixed;inset:0;z-index:0}
+.bg svg{width:100%;height:100%;display:block}
+.bg:after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(0,0,0,.25),rgba(0,0,0,.82) 75%)}
+.wrap{position:relative;z-index:2;width:100%;max-width:420px}
+.logo{display:flex;flex-direction:column;align-items:center;margin-bottom:18px}
+.emblem{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1c1c1c,#000);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 4px rgba(245,192,33,.12),0 14px 40px rgba(0,0,0,.7);position:relative}
+.emblem span{font-family:'Kaushan Script',cursive;font-size:40px;color:var(--gold);text-shadow:0 0 18px rgba(245,192,33,.5)}
+.emblem small{position:absolute;bottom:-8px;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:1px}
+.brand{text-align:center;margin-top:14px}
+.brand h1{font-family:'Kaushan Script',cursive;font-size:46px;color:var(--gold);text-shadow:0 0 26px rgba(245,192,33,.4)}
+.brand p{color:var(--muted);font-size:12.5px;margin-top:2px;letter-spacing:1px}
+.card{background:rgba(15,15,15,.92);backdrop-filter:blur(8px);border:2px solid var(--line);border-radius:14px;padding:26px 22px;box-shadow:0 20px 60px rgba(0,0,0,.8);position:relative;overflow:hidden}
+.card:before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),var(--red),var(--gold),transparent)}
+.vbadge{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--card);border:1px solid #333;border-radius:8px;padding:10px;font-size:14px;color:var(--muted);margin-bottom:18px}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:48px;border-radius:8px;font-size:17px;font-weight:700;cursor:pointer;margin-top:12px;transition:filter .15s,transform .1s}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn-gold{background:linear-gradient(var(--gold2),#f0b111);color:#111;border:2px solid #ffe27a}
+.btn-gold:hover{filter:brightness(1.08)}
+.btn-dark{background:linear-gradient(#333,#1c1c1c);border:2px solid #555;color:#fff;font-weight:500;font-size:16px}
+.btn-dark:hover{border-color:var(--gold)}
+.progress{height:10px;background:var(--card);border:1px solid #333;border-radius:99px;margin-top:16px;overflow:hidden;display:none}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .4s}
+.msg{margin-top:14px;font-size:13.5px;min-height:20px;color:var(--muted);text-align:center;line-height:1.5}
+.msg.err{color:#ff6b6b}.msg.ok{color:var(--green)}
+.notes{margin-top:10px;background:var(--card);border:1px solid #333;border-left:3px solid var(--gold);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--muted);display:none;text-align:left}
+details{margin-top:18px;border-top:1px solid #222;padding-top:14px}
+summary{cursor:pointer;color:var(--muted);font-size:13.5px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary:before{content:'⚙ '}
+input{width:100%;height:44px;padding:0 14px;border-radius:8px;border:2px solid #444;background:#000;color:#fff;margin-top:10px;font-size:14px;outline:none}
+input:focus{border-color:var(--gold)}
+.hint{font-size:11.5px;color:#777;margin-top:10px;line-height:1.6}
+.foot{text-align:center;margin-top:18px;font-size:11px;color:#666}
+</style>
+</head>
+<body>
+<div class="bg">
+<svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0" stop-color="#1a0f0a"/><stop offset=".5" stop-color="#0d0a08"/><stop offset="1" stop-color="#050505"/>
+</linearGradient>
+<radialGradient id="lamp" cx=".5" cy=".5" r=".5">
+<stop offset="0" stop-color="#ff5a3c" stop-opacity=".9"/><stop offset="1" stop-color="#ff5a3c" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="gold" cx=".5" cy=".5" r=".5">
+<stop offset="0" stop-color="#f5c021" stop-opacity=".55"/><stop offset="1" stop-color="#f5c021" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<rect width="400" height="800" fill="url(#sky)"/>
+<!-- distant torii silhouette -->
+<g opacity=".22" fill="#000">
+<rect x="150" y="470" width="100" height="10"/><rect x="160" y="480" width="8" height="120"/><rect x="232" y="480" width="8" height="120"/><rect x="140" y="455" width="120" height="8" rx="4"/><rect x="150" y="440" width="100" height="8" rx="4"/>
+</g>
+<!-- lanterns -->
+<g>
+<ellipse cx="60" cy="150" rx="90" ry="90" fill="url(#lamp)"/>
+<ellipse cx="340" cy="230" rx="80" ry="80" fill="url(#lamp)"/>
+<ellipse cx="200" cy="90" rx="70" ry="70" fill="url(#gold)"/>
+<g transform="translate(60,150)"><rect x="-16" y="-30" width="32" height="52" rx="14" fill="#c3201b"/><rect x="-16" y="-34" width="32" height="6" rx="3" fill="#3a0d0a"/><rect x="-16" y="22" width="32" height="6" rx="3" fill="#3a0d0a"/><text x="0" y="8" text-anchor="middle" font-size="16" fill="#ffd9a0" font-family="serif">唐揚</text></g>
+<g transform="translate(340,230)"><rect x="-14" y="-26" width="28" height="46" rx="12" fill="#c3201b"/><rect x="-14" y="-30" width="28" height="5" rx="2" fill="#3a0d0a"/><rect x="-14" y="20" width="28" height="5" rx="2" fill="#3a0d0a"/><text x="0" y="7" text-anchor="middle" font-size="14" fill="#ffd9a0" font-family="serif">揚</text></g>
+</g>
+<!-- sakura petals -->
+<g fill="#f7c8d0" opacity=".5">
+<ellipse cx="90" cy="320" rx="5" ry="3" transform="rotate(25 90 320)"/>
+<ellipse cx="300" cy="380" rx="4" ry="2.5" transform="rotate(-15 300 380)"/>
+<ellipse cx="180" cy="520" rx="5" ry="3" transform="rotate(40 180 520)"/>
+<ellipse cx="330" cy="600" rx="4" ry="2.5" transform="rotate(-30 330 600)"/>
+<ellipse cx="70" cy="640" rx="5" ry="3" transform="rotate(15 70 640)"/>
+</g>
+<!-- ground reflection -->
+<rect y="700" width="400" height="100" fill="#000" opacity=".55"/>
+</svg>
+</div>
+<div class="wrap">
+  <div class="logo">
+    <div class="emblem"><span>K</span><small>唐揚 KARAAGE</small></div>
+    <div class="brand">
+      <h1>Karajoy</h1>
+      <p>KARAGE ENJOY · JAPANESE STREET FOOD</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="vbadge"><span class="dot"></span><span id="ver">Versi: memuat…</span></div>
+    <button class="btn btn-gold" id="btnOpen">▶&nbsp; MASUK KASIR</button>
+    <button class="btn btn-dark" id="btnCheck">⟳&nbsp; CEK UPDATE / PATCH</button>
+    <div class="progress" id="prog"><i></i></div>
+    <div class="msg" id="msg"></div>
+    <div class="notes" id="notes"></div>
+    <details>
+      <summary>Pengaturan Server Update</summary>
+      <input id="url" placeholder="https://username.github.io/karajoy-pos">
+      <button class="btn btn-dark" id="btnSave" style="height:40px;font-size:14px">Simpan Alamat Server</button>
+      <div class="hint">Upload <b>index.html</b>, <b>app.html</b>, dan <b>version.json</b> ke GitHub Pages, lalu isi alamatnya di sini.</div>
+    </details>
+  </div>
+  <div class="foot">Karajoy POS · Cloud Sync · v1</div>
+</div>
+<script>
+const DB='karajoy_launcher',STORE='files';
+const $=s=>document.querySelector(s);
+const msg=(t,c)=>{const m=$('#msg');m.innerHTML=t;m.className='msg '+(c||'')};
+const prog=p=>{const w=$('#prog');w.style.display=p==null?'none':'block';w.querySelector('i').style.width=(p||0)+'%'};
+let server=localStorage.getItem('kj_server')||'';
+$('#url').value=server;
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE)};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbGet(k){const db=await idb();return new Promise((res,rej)=>{const r=db.transaction(STORE).objectStore(STORE).get(k);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbSet(k,v){const db=await idb();return new Promise((res,rej)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+function showVer(){const v=localStorage.getItem('kj_ver');$('#ver').textContent='Versi: '+(v?'v'+v:'belum terpasang')}
+showVer();
+if(!server)msg('Isi alamat server di Pengaturan, lalu tekan Cek Update.','err');
+$('#btnSave').onclick=()=>{server=$('#url').value.trim().replace(/\/+$/,'');localStorage.setItem('kj_server',server);msg(server?'✔ Alamat server tersimpan.':'Alamat masih kosong.','ok')};
+$('#btnCheck').onclick=async()=>{
+  const b=$('#btnCheck');b.disabled=true;msg('Menghubungkan ke server…');prog(10);
+  try{
+    if(!server)throw new Error('Isi dulu alamat server di Pengaturan.');
+    const r=await fetch(server+'/version.json?_='+Date.now(),{cache:'no-store'});
+    if(!r.ok)throw new Error('version.json tidak ditemukan.');
+    const meta=await r.json();prog(30);
+    const cur=+(localStorage.getItem('kj_ver')||0);
+    if(+(meta.version||0)<=cur){msg('✔ Sudah versi terbaru (v'+cur+').','ok');prog(100);setTimeout(()=>prog(null),800);b.disabled=false;return}
+    msg('Versi v'+meta.version+' tersedia. Mengunduh pembaruan…');prog(45);
+    const ar=await fetch(server+'/'+(meta.app||'app.html')+'?_='+Date.now(),{cache:'no-store'});
+    if(!ar.ok)throw new Error('Gagal mengunduh app.html.');
+    const html=await ar.text();prog(75);
+    if(html.length<10000||!/<html/i.test(html))throw new Error('File app.html tidak valid.');
+    const old=await idbGet('app_current');
+    await idbSet('app_backup',old||'');
+    await idbSet('app_current',html);
+    localStorage.setItem('kj_ver_backup',localStorage.getItem('kj_ver')||'');
+    localStorage.setItem('kj_ver',meta.version);
+    localStorage.setItem('kj_notes',meta.notes||'');
+    showVer();prog(100);
+    msg('✔ Berhasil update ke <b>v'+meta.version+'</b>.','ok');
+    if(meta.notes){const n=$('#notes');n.style.display='block';n.textContent='Catatan update: '+meta.notes}
+    setTimeout(()=>prog(null),900);
+  }catch(e){msg('✖ Gagal: '+e.message,'err');prog(null)}
+  b.disabled=false;
+};
+$('#btnOpen').onclick=async()=>{
+  const b=$('#btnOpen');b.disabled=true;msg('Membuka POS…');prog(30);
+  try{
+    const html=await idbGet('app_current');
+    if(!html){msg('POS belum terpasang. Tekan Cek Update dulu.','err');prog(null);b.disabled=false;return}
+    const blob=new Blob([html],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    const f=document.createElement('iframe');f.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;background:#000;z-index:99';
+    let ok=false;f.onload=()=>{ok=true};
+    f.src=url;document.body.appendChild(f);prog(80);
+    setTimeout(()=>{if(!ok){f.remove();URL.revokeObjectURL(url);prog(null);
+      (async()=>{const bak=await idbGet('app_backup');
+        if(bak){await idbSet('app_current',bak);const v=localStorage.getItem('kj_ver_backup');if(v)localStorage.setItem('kj_ver',v);showVer();msg('✖ Versi baru gagal dimuat—kembali ke versi sebelumnya.','err');}
+        else msg('✖ POS gagal dimuat.','err');
+        b.disabled=false;})();}},9000);
+  }catch(e){msg('✖ Gagal: '+e.message,'err');prog(null);b.disabled=false}
+};
+</script>
+</body>
+</html>

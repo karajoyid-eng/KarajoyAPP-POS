@@ -1,0 +1,43 @@
+{
+  "packageId": "com.karajoy.pos",
+  "host": "USERNAME-kamu.github.io",
+  "name": "Karajoy POS",
+  "launcherName": "Karajoy",
+  "display": "standalone",
+  "themeColor": "#f5c021",
+  "themeColorDark": "#070707",
+  "navigationColor": "#070707",
+  "navigationColorDark": "#070707",
+  "navigationDividerColor": "#070707",
+  "navigationDividerColorDark": "#070707",
+  "backgroundColor": "#070707",
+  "enableNotifications": true,
+  "startUrl": "/karajoy-pos/",
+  "iconUrl": "https://USERNAME-kamu.github.io/karajoy-pos/icon-512.png",
+  "maskableIconUrl": null,
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "karajoy.keystore",
+    "alias": "karajoy"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "Bubblewrap",
+  "webManifestUrl": "https://USERNAME-kamu.github.io/karajoy-pos/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://USERNAME-kamu.github.io/karajoy-pos/",
+  "minSdkVersion": 23,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "appVersion": "1"
+}

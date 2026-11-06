@@ -19,65 +19,60 @@ jobs:
         with:
           node-version: 20
 
-      # SETUP ANDROID SDK
+      # ANDROID SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools'
 
-      # INSTALL SDK PACKAGES
       - name: Install Android SDK Packages
         run: |
           sdkmanager --install \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      # FIX BUBBLEWRAP SDK PATH
+      # FIX ANDROID SDK STRUCTURE
       - name: Fix Android SDK Structure
         run: |
-          echo "ANDROID_HOME=$ANDROID_HOME"
-
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" \
             -type f -name sdkmanager | head -n 1)
 
           if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager not found"
+            echo "SDKMANAGER NOT FOUND"
             exit 1
           fi
 
           mkdir -p "$ANDROID_HOME/bin"
 
-          ln -sf "$SDKMANAGER" \
-            "$ANDROID_HOME/bin/sdkmanager"
-
-          echo "SDK Manager: $SDKMANAGER"
-          ls -la "$ANDROID_HOME/bin"
-
-          test -d "$ANDROID_HOME/bin"
-          test -x "$ANDROID_HOME/bin/sdkmanager"
+          ln -sf "$SDKMANAGER" "$ANDROID_HOME/bin/sdkmanager"
 
       # INSTALL BUBBLEWRAP
       - name: Install Bubblewrap
-        run: |
-          npm i -g @bubblewrap/cli
-          bubblewrap --version
+        run: npm install -g @bubblewrap/cli
 
-      # BUBBLEWRAP CONFIG
+      # CONFIGURE BEFORE RUNNING BUBBLEWRAP
       - name: Bubblewrap config
         run: |
           mkdir -p ~/.bubblewrap
 
-          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" \
-            > ~/.bubblewrap/config.json
+          cat > ~/.bubblewrap/config.json <<EOF
+          {
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_HOME"
+          }
+          EOF
 
-          cat ~/.bubblewrap/config.json
+          echo "JAVA: $JAVA_HOME"
+          echo "ANDROID: $ANDROID_HOME"
+
+          java -version
 
       # BUILD APK
       - name: Build APK
         run: |
           set -o pipefail
 
-          bubblewrap update --skipVersionUpgrade || true
+          bubblewrap update --skipVersionUpgrade
 
           bubblewrap build --skipPwaValidation --skipSigning 2>&1 | tee build.log
 
@@ -85,15 +80,13 @@ jobs:
             ! -path '*/intermediates/*' | head -n 1)
 
           if [ -z "$APK" ]; then
-            echo "ERROR: APK file not found"
-            find . -type f -name '*.apk'
+            echo "APK NOT FOUND"
             exit 1
           fi
 
-          echo "APK FOUND: $APK"
           cp "$APK" karajoy-pos.apk
 
-      # UPLOAD BUILD LOG
+      # UPLOAD LOG
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4

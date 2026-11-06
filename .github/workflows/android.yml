@@ -25,8 +25,11 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Point Bubblewrap to JDK & Android SDK
-        run: printf 'n\n%s\n' "$JAVA_HOME" | bubblewrap updateConfig --jdkPath "$JAVA_HOME" --androidSdkPath "$ANDROID_HOME"
+      - name: Write Bubblewrap config (no prompts)
+        run: |
+          mkdir -p ~/.bubblewrap
+          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$ANDROID_HOME" > ~/.bubblewrap/config.json
+          cat ~/.bubblewrap/config.json
 
       - name: Generate keystore if missing
         env:
@@ -34,4 +37,21 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ ! -f karajoy.keystore ]; then
-            keyto
+            keytool -genkeypair -v -keystore karajoy.keystore -alias karajoy -keyalg RSA -keysize 2048 -validity 10000 -storepass $KEYSTORE_PASSWORD -keypass $KEY_PASSWORD -dname CN=KarajoyPOS,OU=Karajoy,O=Karajoy,L=Bogor,ST=Jabar,C=ID
+          fi
+
+      - name: Build APK
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          bubblewrap update --skipVersionUpgrade || true
+          bubblewrap build --skipPwaValidation
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: karajoy-pos-apk
+          path: |
+            app-release-signed.apk
+            app-release-bundle.aab

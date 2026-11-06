@@ -25,22 +25,13 @@ jobs:
       - name: Bubblewrap config
         run: |
           mkdir -p ~/.bubblewrap
-          echo '{"jdkPath":"$JAVA_HOME","androidSdkPath":"$ANDROID_HOME"}' > ~/.bubblewrap/config.json
-
-      - name: Fix SDK layout
-        run: ln -sfn $ANDROID_HOME/cmdline-tools/latest/bin $ANDROID_HOME/bin
+          echo '{"jdkPath":"'$JAVA_HOME'","androidSdkPath":"/usr/local/lib/android/sdk"}' > ~/.bubblewrap/config.json
 
       - name: Build APK
         run: |
           set -o pipefail
           bubblewrap update --skipVersionUpgrade || true
           bubblewrap build --skipPwaValidation --skipSigning 2>&1 | tee build.log
-
-      - name: Show error cause
-        if: failure()
-        run: |
-          grep -n -A 25 "What went wrong" build.log || true
-          grep -n -B 2 -A 10 "FAILURE" build.log || true
 
       - name: Upload build log
         if: always()

@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 20
 
-      # INSTALL PYTHON IMAGE PROCESSING
+      # PYTHON
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -96,11 +96,11 @@ jobs:
         run: |
           bubblewrap update --skipVersionUpgrade
 
-      # INSTALL KARAJOY APPLICATION ICON
-      - name: Install Karajoy App Icon
+      # INSTALL KARAJOY APP ICON
+      - name: Install Karajoy Application Icon
         run: |
           if [ ! -f "karajoy-app-icon.png" ]; then
-            echo "ERROR: karajoy-app-icon.png NOT FOUND"
+            echo "ERROR: ICON NOT FOUND"
             exit 1
           fi
 
@@ -118,7 +118,7 @@ jobs:
 
           image = Image.open(source).convert("RGBA")
 
-          # CROP TO SQUARE
+          # CROP SQUARE
           side = min(image.size)
           left = (image.width - side) // 2
           top = (image.height - side) // 2
@@ -127,7 +127,7 @@ jobs:
               (left, top, left + side, top + side)
           )
 
-          # GENERATE ANDROID ICON SIZES
+          # GENERATE ICON DENSITIES
           densities = {
               "mipmap-mdpi": 48,
               "mipmap-hdpi": 72,
@@ -163,7 +163,7 @@ jobs:
 
           canvas.alpha_composite(
               foreground,
-              ((432 - 320) // 2, (432 - 320) // 2)
+              (56, 56)
           )
 
           canvas.save(
@@ -177,7 +177,7 @@ jobs:
           (values / "ic_launcher_background.xml").write_text(
               '<?xml version="1.0" encoding="utf-8"?>\n'
               '<resources>\n'
-              '    <color name="ic_launcher_background">#080604</color>\n'
+              '  <color name="ic_launcher_background">#080604</color>\n'
               '</resources>\n',
               encoding="utf-8"
           )
@@ -189,20 +189,15 @@ jobs:
           adaptive_xml = (
               '<?xml version="1.0" encoding="utf-8"?>\n'
               '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
-              '    <background android:drawable="@color/ic_launcher_background" />\n'
-              '    <foreground android:drawable="@drawable/ic_launcher_foreground" />\n'
+              '  <background android:drawable="@color/ic_launcher_background" />\n'
+              '  <foreground android:drawable="@drawable/ic_launcher_foreground" />\n'
               '</adaptive-icon>\n'
           )
 
-          (adaptive / "ic_launcher.xml").write_text(
-              adaptive_xml, encoding="utf-8"
-          )
+          (adaptive / "ic_launcher.xml").write_text(adaptive_xml)
+          (adaptive / "ic_launcher_round.xml").write_text(adaptive_xml)
 
-          (adaptive / "ic_launcher_round.xml").write_text(
-              adaptive_xml, encoding="utf-8"
-          )
-
-          # SET APPLICATION ICON
+          # SET ANDROID APPLICATION ICON
           ET.register_namespace(
               "android",
               "http://schemas.android.com/apk/res/android"
@@ -233,16 +228,19 @@ jobs:
               xml_declaration=True
           )
 
-          print("KARAJOY APPLICATION ICON INSTALLED!")
+          print("KARAJOY ICON INSTALLED SUCCESSFULLY!")
           PY
 
-      # BUILD APK
+      # BUILD UNSIGNED APK
       - name: Build APK
         run: |
           set -o pipefail
 
           bubblewrap build --skipPwaValidation --skipSigning 2>&1 | tee build.log
 
+      # FIND APK
+      - name: Locate APK
+        run: |
           APK=$(find . -type f -name '*.apk' \
             ! -path '*/intermediates/*' | head -n 1)
 
@@ -252,10 +250,52 @@ jobs:
           fi
 
           echo "APK FOUND: $APK"
+          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
 
-          cp "$APK" karajoy-pos.apk
+      # SIGN APK
+      - name: Sign Android APK
+        run: |
+          set -euo pipefail
 
-      # UPLOAD BUILD LOG
+          # TEMPORARY KEY FOR INSTALLATION TEST
+          KS_PASS=$(openssl rand -hex 24)
+
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/karajoy.keystore" \
+            -storepass "$KS_PASS" \
+            -alias karajoy \
+            -keypass "$KS_PASS" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Karajoy POS, O=Karajoy, C=ID"
+
+          # ALIGN APK
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" \
+            -f -p 4 \
+            "$APK_PATH" \
+            "$RUNNER_TEMP/karajoy-aligned.apk"
+
+          # SIGN APK
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks "$RUNNER_TEMP/karajoy.keystore" \
+            --ks-key-alias karajoy \
+            --ks-pass env:KS_PASS \
+            --key-pass env:KS_PASS \
+            --out karajoy-pos.apk \
+            "$RUNNER_TEMP/karajoy-aligned.apk"
+
+          # VERIFY SIGNATURE
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify \
+            --verbose \
+            karajoy-pos.apk
+
+          echo "APK SIGNED SUCCESSFULLY!"
+
+        env:
+          KS_PASS: ${{ secrets.KARAJOY_KEY_PASSWORD }}
+
+      # NOTE: TEMP KEY PASSWORD HANDLING
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
@@ -264,7 +304,7 @@ jobs:
           path: build.log
           if-no-files-found: warn
 
-      # UPLOAD APK
+      # UPLOAD SIGNED APK
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4

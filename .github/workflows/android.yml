@@ -35,4 +35,17 @@ jobs:
           fi
 
       - name: Build APK
-       en
+        env:
+          BUBBLEWRAP_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          BUBBLEWRAP_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          bubblewrap update --skipVersionUpgrade || true
+          bubblewrap build --skipPwaValidation
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: karajoy-pos-apk
+          path: |
+            app-release-signed.apk
+            app-release-bundle.aab

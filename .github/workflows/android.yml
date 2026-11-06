@@ -19,6 +19,14 @@ jobs:
         with:
           node-version: 20
 
+      # INSTALL PYTHON IMAGE PROCESSING
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Pillow
+        run: pip install pillow
+
       # ANDROID SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
@@ -87,6 +95,146 @@ jobs:
       - name: Update Bubblewrap Project
         run: |
           bubblewrap update --skipVersionUpgrade
+
+      # INSTALL KARAJOY APPLICATION ICON
+      - name: Install Karajoy App Icon
+        run: |
+          if [ ! -f "karajoy-app-icon.png" ]; then
+            echo "ERROR: karajoy-app-icon.png NOT FOUND"
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          source = Path("karajoy-app-icon.png")
+          res = Path("app/src/main/res")
+          manifest = Path("app/src/main/AndroidManifest.xml")
+
+          if not manifest.exists():
+              raise SystemExit("AndroidManifest.xml NOT FOUND")
+
+          image = Image.open(source).convert("RGBA")
+
+          # CROP TO SQUARE
+          side = min(image.size)
+          left = (image.width - side) // 2
+          top = (image.height - side) // 2
+
+          image = image.crop(
+              (left, top, left + side, top + side)
+          )
+
+          # GENERATE ANDROID ICON SIZES
+          densities = {
+              "mipmap-mdpi": 48,
+              "mipmap-hdpi": 72,
+              "mipmap-xhdpi": 96,
+              "mipmap-xxhdpi": 144,
+              "mipmap-xxxhdpi": 192
+          }
+
+          for folder, size in densities.items():
+              directory = res / folder
+              directory.mkdir(parents=True, exist_ok=True)
+
+              icon = image.resize(
+                  (size, size),
+                  Image.Resampling.LANCZOS
+              )
+
+              icon.save(directory / "ic_launcher.png")
+              icon.save(directory / "ic_launcher_round.png")
+
+          # ADAPTIVE ICON FOREGROUND
+          drawable = res / "drawable"
+          drawable.mkdir(parents=True, exist_ok=True)
+
+          canvas = Image.new(
+              "RGBA", (432, 432), (8, 6, 4, 255)
+          )
+
+          foreground = image.resize(
+              (320, 320),
+              Image.Resampling.LANCZOS
+          )
+
+          canvas.alpha_composite(
+              foreground,
+              ((432 - 320) // 2, (432 - 320) // 2)
+          )
+
+          canvas.save(
+              drawable / "ic_launcher_foreground.png"
+          )
+
+          # ADAPTIVE ICON BACKGROUND
+          values = res / "values"
+          values.mkdir(parents=True, exist_ok=True)
+
+          (values / "ic_launcher_background.xml").write_text(
+              '<?xml version="1.0" encoding="utf-8"?>\n'
+              '<resources>\n'
+              '    <color name="ic_launcher_background">#080604</color>\n'
+              '</resources>\n',
+              encoding="utf-8"
+          )
+
+          # ADAPTIVE ICON XML
+          adaptive = res / "mipmap-anydpi-v26"
+          adaptive.mkdir(parents=True, exist_ok=True)
+
+          adaptive_xml = (
+              '<?xml version="1.0" encoding="utf-8"?>\n'
+              '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
+              '    <background android:drawable="@color/ic_launcher_background" />\n'
+              '    <foreground android:drawable="@drawable/ic_launcher_foreground" />\n'
+              '</adaptive-icon>\n'
+          )
+
+          (adaptive / "ic_launcher.xml").write_text(
+              adaptive_xml, encoding="utf-8"
+          )
+
+          (adaptive / "ic_launcher_round.xml").write_text(
+              adaptive_xml, encoding="utf-8"
+          )
+
+          # SET APPLICATION ICON
+          ET.register_namespace(
+              "android",
+              "http://schemas.android.com/apk/res/android"
+          )
+
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+
+          android = "{http://schemas.android.com/apk/res/android}"
+          application = root.find("application")
+
+          if application is None:
+              raise SystemExit("APPLICATION TAG NOT FOUND")
+
+          application.set(
+              android + "icon",
+              "@mipmap/ic_launcher"
+          )
+
+          application.set(
+              android + "roundIcon",
+              "@mipmap/ic_launcher_round"
+          )
+
+          tree.write(
+              manifest,
+              encoding="utf-8",
+              xml_declaration=True
+          )
+
+          print("KARAJOY APPLICATION ICON INSTALLED!")
+          PY
 
       # BUILD APK
       - name: Build APK

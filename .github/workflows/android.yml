@@ -31,7 +31,7 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      # FIX ANDROID SDK STRUCTURE
+      # FIX SDK STRUCTURE
       - name: Fix Android SDK Structure
         run: |
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" \
@@ -50,7 +50,7 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      # CONFIGURE BEFORE RUNNING BUBBLEWRAP
+      # BUBBLEWRAP CONFIG
       - name: Bubblewrap config
         run: |
           mkdir -p ~/.bubblewrap
@@ -62,17 +62,36 @@ jobs:
           }
           EOF
 
-          echo "JAVA: $JAVA_HOME"
-          echo "ANDROID: $ANDROID_HOME"
+      # FIX MIN SDK VERSION
+      - name: Fix Minimum Android Version
+        run: |
+          python3 - <<'PY'
+          import json
 
-          java -version
+          path = "twa-manifest.json"
+
+          with open(path, "r") as f:
+              config = json.load(f)
+
+          print("Old minSdkVersion:", config.get("minSdkVersion"))
+
+          config["minSdkVersion"] = 24
+
+          with open(path, "w") as f:
+              json.dump(config, f, indent=2)
+
+          print("New minSdkVersion:", config["minSdkVersion"])
+          PY
+
+      # GENERATE ANDROID PROJECT
+      - name: Update Bubblewrap Project
+        run: |
+          bubblewrap update --skipVersionUpgrade
 
       # BUILD APK
       - name: Build APK
         run: |
           set -o pipefail
-
-          bubblewrap update --skipVersionUpgrade
 
           bubblewrap build --skipPwaValidation --skipSigning 2>&1 | tee build.log
 
@@ -84,9 +103,11 @@ jobs:
             exit 1
           fi
 
+          echo "APK FOUND: $APK"
+
           cp "$APK" karajoy-pos.apk
 
-      # UPLOAD LOG
+      # UPLOAD BUILD LOG
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4

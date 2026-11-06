@@ -19,35 +19,60 @@ jobs:
         with:
           node-version: 20
 
-      # ANDROID SDK
+      # SETUP ANDROID SDK
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools'
 
+      # INSTALL SDK PACKAGES
       - name: Install Android SDK Packages
         run: |
           sdkmanager --install \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
+      # FIX BUBBLEWRAP SDK PATH
+      - name: Fix Android SDK Structure
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+
+          SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" \
+            -type f -name sdkmanager | head -n 1)
+
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ERROR: sdkmanager not found"
+            exit 1
+          fi
+
+          mkdir -p "$ANDROID_HOME/bin"
+
+          ln -sf "$SDKMANAGER" \
+            "$ANDROID_HOME/bin/sdkmanager"
+
+          echo "SDK Manager: $SDKMANAGER"
+          ls -la "$ANDROID_HOME/bin"
+
+          test -d "$ANDROID_HOME/bin"
+          test -x "$ANDROID_HOME/bin/sdkmanager"
+
       # INSTALL BUBBLEWRAP
       - name: Install Bubblewrap
-        run: npm i -g @bubblewrap/cli
+        run: |
+          npm i -g @bubblewrap/cli
+          bubblewrap --version
 
       # BUBBLEWRAP CONFIG
       - name: Bubblewrap config
         run: |
           mkdir -p ~/.bubblewrap
 
-          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" > ~/.bubblewrap/config.json
+          echo "{\"jdkPath\":\"$JAVA_HOME\",\"androidSdkPath\":\"$ANDROID_HOME\"}" \
+            > ~/.bubblewrap/config.json
 
-          echo "JAVA_HOME=$JAVA_HOME"
-          echo "ANDROID_HOME=$ANDROID_HOME"
+          cat ~/.bubblewrap/config.json
 
-          ls -la "$ANDROID_HOME"
-
-      # BUILD ANDROID PROJECT
+      # BUILD APK
       - name: Build APK
         run: |
           set -o pipefail
@@ -56,6 +81,18 @@ jobs:
 
           bubblewrap build --skipPwaValidation --skipSigning 2>&1 | tee build.log
 
+          APK=$(find . -type f -name '*.apk' \
+            ! -path '*/intermediates/*' | head -n 1)
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: APK file not found"
+            find . -type f -name '*.apk'
+            exit 1
+          fi
+
+          echo "APK FOUND: $APK"
+          cp "$APK" karajoy-pos.apk
+
       # UPLOAD BUILD LOG
       - name: Upload build log
         if: always()
@@ -63,6 +100,7 @@ jobs:
         with:
           name: build-log
           path: build.log
+          if-no-files-found: warn
 
       # UPLOAD APK
       - name: Upload APK
@@ -70,5 +108,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: karajoy-pos-apk
-          path: app-release-unsigned-aligned.apk
+          path: karajoy-pos.apk
           if-no-files-found: error

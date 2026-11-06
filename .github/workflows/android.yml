@@ -8,29 +8,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
+        run: npm i -g @bubblewrap/cli
 
-      - name: Write Bubblewrap config (no prompts)
+      - name: Bubblewrap config
         run: |
           mkdir -p ~/.bubblewrap
-          printf '{"jdkPath":"%s","androidSdkPath":"%s"}' "$JAVA_HOME" "$ANDROID_HOME" > ~/.bubblewrap/config.json
-          cat ~/.bubblewrap/config.json
+          echo '{"jdkPath":"'\"$JAVA_HOME\"'","androidSdkPath":"'\"$ANDROID_HOME\"'"}' > ~/.bubblewrap/config.json
 
-      - name: Fix Bubblewrap SDK layout
+      - name: Fix SDK layout
+        run: ln -sfn $ANDROID_HOME/cmdline-tools/latest/bin $ANDROID_HOME/bin
+
+      - name: Build APK
         run: |
-          ln -sfn "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/bi
+          bubblewrap update --skipVersionUpgrade || true
+          bubblewrap build --skipPwaValidation --skipSigning
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: karajoy-pos-apk
+          path: app-release-unsigned.apk

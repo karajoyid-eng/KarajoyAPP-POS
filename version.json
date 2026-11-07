@@ -1,5 +1,5 @@
 {
-  "version": 1,
-  "notes": "Rilis awal: sinkron cloud, QRIS kompres otomatis, anti-bug refresh.",
+  "version": 2,
+  "notes": "Order website realtime ke antrean POS, tombol Terima/Batalkan, dan notifikasi suara order website baru. Fitur POS lainnya dipertahankan.",
   "app": "app.html"
 }

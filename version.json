@@ -1,5 +1,5 @@
 {
-  "version": 2,
-  "notes": "Order website realtime ke antrean POS, tombol Terima/Batalkan, dan notifikasi suara order website baru. Fitur POS lainnya dipertahankan.",
+  "version": 3,
+  "notes": "Menu In The Queue terpisah di sidebar, badge merah antrean website realtime, dan notifikasi MP3 untuk order website baru. Fitur POS lainnya dipertahankan.",
   "app": "app.html"
 }
